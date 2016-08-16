@@ -1,0 +1,9 @@
+coverage.html
+test
+*.run
+*.out
+*.iml
+.idea
+.yoyo-migrate
+.DS_Store
+glorm
