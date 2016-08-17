@@ -15,8 +15,8 @@ type Comment struct {
 	UserId    int64
 	ArticleId int64
 	Content   string
-	CreatedAt time.Time `ignore:"true"`
-	UpdatedAt time.Time `ignore:"true"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (obj Comment) MarshalJSON() ([]byte, error) {

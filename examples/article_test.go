@@ -5,32 +5,62 @@ package examples
 
 import (
 	"github.com/zhengyun1112/glorm/orm"
+	"strconv"
 	"testing"
-	"time"
 )
 
 func TestInsertAndGetArticle(t *testing.T) {
 	orm.InitDefault("root:@/blog?parseTime=true&loc=Local")
-	orm.TruncateTable("article")
+	orm.TruncateTables()
+
+	var user = &User{
+		Name:      "user 1",
+		Password:  "123",
+		IsMarried: 0,
+		Age:       21,
+	}
+	err := UserDao.Insert(user)
+	if err != nil {
+		t.Fatalf("failed to InsertUser, err: %+v", err)
+	}
 
 	var article = &Article{
-		UserId:    0,
-		Title:     "",
-		State:     0,
-		Content:   "",
-		Donation:  0,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		UserId:   user.UserId,
+		Title:    "article 1",
+		State:    0,
+		Content:  "This is a test article 1",
+		Donation: 12,
 	}
-	err := ArticleDao.Insert(article)
+	err = ArticleDao.Insert(article)
 	if err != nil {
 		t.Fatalf("failed to InsertArticle, err: %+v", err)
 	}
+
+	for i := 0; i < 5; i++ {
+		comment := &Comment{
+			UserId:    user.UserId,
+			ArticleId: article.ArticleId,
+			Content:   "Aha, comment on article 1, no." + strconv.Itoa(i),
+		}
+		err = CommentDao.Insert(comment)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
 	loaded, err := ArticleDao.GetByPK(article.ArticleId)
 	if err != nil {
 		t.Fatalf("failed to GetByPK, err: %+v", err)
 	}
 	if loaded == nil {
 		t.Fatalf("should have loaded one Article")
+	}
+
+	if loaded.User == nil || loaded.User.UserId != user.UserId {
+		t.Fatalf("should have user loaded for belongs_to OR")
+	}
+
+	if len(loaded.Comments) != 5 {
+		t.Fatalf("should have 5 comments loaded for has_many OR")
 	}
 }

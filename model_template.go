@@ -78,7 +78,7 @@ func TestInsertAndGet{{.Name}}(t *testing.T) {
 	orm.TruncateTable("{{.TableName}}")
 
 	var {{.LowerName}} = &{{.Name}}{
-	{{range .Fields}} {{if and (not .IsPrimaryKey) (.DefaultValueCode)}} {{.Name}}: {{.DefaultValueCode}},
+	{{range .Fields}} {{if and (not .IsPrimaryKey) (.DefaultValueCode) (not .IgnoreOnInsert)}} {{.Name}}: {{.DefaultValueCode}},
 	{{end}}{{end}}
 	}
 	err := {{.Name}}Dao.Insert({{.LowerName}})

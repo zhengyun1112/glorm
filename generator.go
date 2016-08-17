@@ -82,6 +82,7 @@ func generateModel(dbName, tName string, schema TableSchema, config codeConfig, 
 		config:    config,
 	}
 	needTime := false
+	needTimeForTest := false
 	for i, col := range schema {
 		field := ModelField{
 			Name:            toCapitalCase(col.ColumnName, true),
@@ -95,8 +96,17 @@ func generateModel(dbName, tName string, schema TableSchema, config codeConfig, 
 			Extra:           col.Extra,
 			Comment:         col.ColumnComment,
 		}
+
+		if (col.ColumnName == "created_at" || col.ColumnName == "updated_at") && col.DefaultValue != "" {
+			field.Tag = fmt.Sprintf("`ignore:\"true\"`")
+			field.IgnoreOnInsert = true
+		}
+
 		if field.Type == "time.Time" {
 			needTime = true
+			if !field.IgnoreOnInsert {
+				needTimeForTest = true
+			}
 			field.Formatter = ".Format(\"2006-01-02 15:04:05\")"
 			field.DefaultValueCode = "time.Now()"
 		} else if strings.Contains(field.Type, "int") || strings.Contains(field.Type, "float") {
@@ -114,10 +124,6 @@ func generateModel(dbName, tName string, schema TableSchema, config codeConfig, 
 			} else {
 				field.Tag = fmt.Sprintf("`pk:\"true\"`")
 			}
-		}
-
-		if col.ColumnName == "created_at" || col.ColumnName == "updated_at" {
-			field.Tag = fmt.Sprintf("`ignore:\"true\"`")
 		}
 
 		if field.IsUniqueKey {
@@ -138,7 +144,7 @@ func generateModel(dbName, tName string, schema TableSchema, config codeConfig, 
 	}
 
 	testFileName := path.Join(config.packageName, tName+"_test.go")
-	if err := generateModelTest(model, tmpl, needTime, testFileName); err != nil {
+	if err := generateModelTest(model, tmpl, needTimeForTest, testFileName); err != nil {
 		return err
 	}
 
@@ -180,6 +186,7 @@ type ModelField struct {
 	Comment          string
 	Formatter        string
 	DefaultValueCode string
+	IgnoreOnInsert   bool
 }
 
 func (f ModelField) ConverterFuncName() string {

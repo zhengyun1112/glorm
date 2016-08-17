@@ -17,8 +17,10 @@ type Article struct {
 	State     int // 0: published, 1: draft, 2: hidden
 	Content   string
 	Donation  float64
-	CreatedAt time.Time `ignore:"true"`
-	UpdatedAt time.Time `ignore:"true"`
+	CreatedAt time.Time  `ignore:"true"`
+	UpdatedAt time.Time  `ignore:"true"`
+	User      *User      `or:"belongs_to" table:"user"`
+	Comments  []*Comment `or:"has_many" table:"comment"`
 }
 
 func (obj Article) MarshalJSON() ([]byte, error) {

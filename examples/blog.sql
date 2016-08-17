@@ -33,14 +33,13 @@ CREATE TABLE IF NOT EXISTS `article` (
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `comment` (
-    `comment_id` BIGINT NOT NULL,
+    `comment_id` BIGINT NOT NULL AUTO_INCREMENT,
     `user_id` BIGINT NOT NULL,
     `article_id` BIGINT NOT NULL,
     `content` TEXT DEFAULT NULL,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE current_timestamp,
-    PRIMARY KEY (`comment_id`),
-    UNIQUE INDEX UNIQUE_user_article_id (`user_id`, `article_id`)
+    PRIMARY KEY (`comment_id`)
 ) ENGINE = InnoDB;
 
 commit;
