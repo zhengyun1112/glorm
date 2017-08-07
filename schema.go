@@ -4,13 +4,14 @@ import (
 	"github.com/zhengyun1112/glorm/orm"
 	"strings"
 	"fmt"
+	"database/sql"
 )
 
 type column struct {
-	Schema        string
+	TableSchema   string
 	TableName     string
 	ColumnName    string
-	DefaultValue  string
+	ColumnDefault sql.NullString
 	DataType      string
 	ColumnType    string
 	ColumnKey     string

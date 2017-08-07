@@ -92,12 +92,12 @@ func generateModel(dbName, tName string, schema TableSchema, config codeConfig, 
 			IsPrimaryKey:    strings.ToUpper(col.ColumnKey) == "PRI",
 			IsUniqueKey:     strings.ToUpper(col.ColumnKey) == "UNI",
 			IsAutoIncrement: strings.ToUpper(col.Extra) == "AUTO_INCREMENT",
-			DefaultValue:    col.DefaultValue,
+			DefaultValue:    col.ColumnDefault.String,
 			Extra:           col.Extra,
 			Comment:         col.ColumnComment,
 		}
 
-		if (col.ColumnName == "created_at" || col.ColumnName == "updated_at") && col.DefaultValue != "" {
+		if (col.ColumnName == "created_at" || col.ColumnName == "updated_at") && col.ColumnDefault.Valid {
 			field.Tag = fmt.Sprintf("`ignore:\"true\"`")
 			field.IgnoreOnInsert = true
 		}
