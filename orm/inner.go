@@ -18,7 +18,7 @@ import (
 var sqlParamReg *regexp.Regexp
 
 func init() {
-	sqlParamReg, _ = regexp.Compile("(#{[a-zA-Z0-9-_]*})")
+	sqlParamReg, _ = regexp.Compile("(#\\{[a-zA-Z0-9-_]*\\})")
 }
 
 func colName2FieldName(buf string) string {
@@ -255,7 +255,7 @@ func selectByPK(tdx Tdx, s interface{}, pk interface{}) error {
 	if pkname == "" {
 		return errors.New(tabname + " does not have primary key")
 	}
-	return selectOne(tdx, s, fmt.Sprintf("select * from %s where %s = ?", tabname, pkname), pk)
+	return selectOne(tdx, s, fmt.Sprintf("select * from `%s` where `%s` = ?", tabname, pkname), pk)
 }
 
 func selectOne(tdx Tdx, s interface{}, query string, args ...interface{}) error {
@@ -280,7 +280,7 @@ func selectOne(tdx Tdx, s interface{}, query string, args ...interface{}) error 
 			} else if orCol.or == TAG_HAS_MANY {
 				orField := v.FieldByName(orCol.fieldName)
 				err = selectManyInternal(tdx, orField.Addr().Interface(), false,
-					"SELECT * FROM "+orCol.table+" WHERE "+fieldName2ColName(pk.Name)+" = ?", pkValue)
+					"SELECT * FROM `"+orCol.table+"` WHERE `"+fieldName2ColName(pk.Name)+"` = ?", pkValue)
 				if err != nil {
 					return err
 				}
@@ -326,7 +326,7 @@ func selectOneInternal(tdx Tdx, s interface{}, query string, args ...interface{}
 }
 
 func processOrHasOneRelation(tdx Tdx, orCol *orColumn, v reflect.Value, pk reflect.StructField, pkValue interface{}) error {
-	orRows, err := tdx.Query("SELECT * FROM "+orCol.table+" WHERE "+fieldName2ColName(pk.Name)+" = ? LIMIT 1",
+	orRows, err := tdx.Query("SELECT * FROM `"+orCol.table+"` WHERE `"+fieldName2ColName(pk.Name)+"` = ? LIMIT 1",
 		pkValue)
 	if err != nil {
 		return err
@@ -351,7 +351,7 @@ func processOrHasOneRelation(tdx Tdx, orCol *orColumn, v reflect.Value, pk refle
 }
 
 func processOrBelongsToRelation(tdx Tdx, orCol *orColumn, v reflect.Value, fk string, fkValue interface{}) error {
-	orRows, err := tdx.Query("SELECT * FROM "+orCol.table+" WHERE "+fk+" = ? LIMIT 1",
+	orRows, err := tdx.Query("SELECT * FROM `"+orCol.table+"` WHERE `"+fk+"` = ? LIMIT 1",
 		fkValue)
 	if err != nil {
 		return err
@@ -668,7 +668,7 @@ func selectManyInternal(tdx Tdx, s interface{}, processOr bool, query string, ar
 					}
 					i = i + 1
 				}
-				sqlQuery = makeString("SELECT * FROM "+orCol.table+" WHERE "+fk+" in (",
+				sqlQuery = makeString("SELECT * FROM `"+orCol.table+"` WHERE `"+fk+"` in (",
 					",", ")", fkValues)
 				orRows, err := tdx.Query(sqlQuery)
 
@@ -697,7 +697,7 @@ func selectManyInternal(tdx Tdx, s interface{}, processOr bool, query string, ar
 					}
 				}
 			} else {
-				sqlQuery = makeString("SELECT * FROM "+orCol.table+" WHERE "+fieldName2ColName(pkCol.Name)+" in (",
+				sqlQuery = makeString("SELECT * FROM `"+orCol.table+"` WHERE `"+fieldName2ColName(pkCol.Name)+"` in (",
 					",", ")", keys)
 				orRows, err := tdx.Query(sqlQuery)
 
@@ -779,7 +779,9 @@ func columnsByStruct(s interface{}) (string, string, []interface{}, reflect.Valu
 			cols += ","
 			vals += ","
 		}
+		cols += "`"
 		cols += cn
+		cols += "`"
 		vals += "?"
 		ret = append(ret, v.Field(k).Addr().Interface())
 		n += 1
@@ -806,7 +808,9 @@ func columnsBySlice(s []interface{}) (string, string, []interface{}, []reflect.V
 		if !isFirst {
 			cols += ","
 		}
+		cols += "`"
 		cols += cn
+		cols += "`"
 		isFirst = false
 	}
 	cols += ")"
@@ -859,7 +863,7 @@ func insert(tdx Tdx, s interface{}) error {
 	cols, vals, ifs, pk, isAi := columnsByStruct(s)
 	t := reflect.TypeOf(s).Elem()
 
-	q := fmt.Sprintf("insert into %s (%s) values(%s)", fieldName2ColName(t.Name()), cols, vals)
+	q := fmt.Sprintf("insert into `%s` (%s) values(%s)", fieldName2ColName(t.Name()), cols, vals)
 	ret, err := tdx.Exec(q, ifs...)
 	if err != nil {
 		return err
@@ -884,7 +888,7 @@ func insertBatch(tdx Tdx, s []interface{}) error {
 	cols, vals, ifs, pks, ais := columnsBySlice(s)
 	t := reflect.TypeOf(s[0]).Elem()
 
-	q := fmt.Sprintf("insert into %s %s values %s", fieldName2ColName(t.Name()), cols, vals)
+	q := fmt.Sprintf("insert into `%s` %s values %s", fieldName2ColName(t.Name()), cols, vals)
 	ret, err := tdx.Exec(q, ifs...)
 	if err != nil {
 		return err
