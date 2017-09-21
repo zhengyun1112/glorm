@@ -135,8 +135,7 @@ func TestQueryRawSetAndQueryRaw(t *testing.T) {
 			EndDate:     time.Now(),
 		}
 
-		ps := make([]interface{}, 0)
-		ps = append(ps, p1, p2)
+		ps := []*TestOrmA123{p1, p2}
 
 		err := InsertBatch(ps)
 		fmt.Println(err)
@@ -674,7 +673,7 @@ func TestPanicHandlingInTransaction(t *testing.T) {
 
 func TestSelectFloat64(t *testing.T) {
 	oneTestScope(func(orm *ORM) {
-		list := make([]interface{}, 0, 2)
+		list := make([]*TestOrmA123, 0, 2)
 		for i := 0; i < 2; i++ {
 			list = append(list, &TestOrmA123{
 				OtherId:     1,

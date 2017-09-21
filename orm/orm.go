@@ -35,7 +35,7 @@ type ORMer interface {
 	SelectInt(string, ...interface{}) (int64, error)
 	SelectFloat64(string, ...interface{}) (float64, error)
 	Insert(interface{}) error
-	InsertBatch([]interface{}) error
+	InsertBatch(interface{}) error
 	Exec(string, ...interface{}) (sql.Result, error)
 	ExecWithParam(string, interface{}) (sql.Result, error)
 	ExecWithRowAffectCheck(int64, string, ...interface{}) error
@@ -163,7 +163,7 @@ func (o *ORM) Insert(s interface{}) error {
 	return insert(o.db, s)
 }
 
-func (o *ORM) InsertBatch(s []interface{}) error {
+func (o *ORM) InsertBatch(s interface{}) error {
 	return insertBatch(o.db, s)
 }
 
@@ -230,7 +230,7 @@ func (o *ORMTran) Insert(s interface{}) error {
 	return insert(o.tx, s)
 }
 
-func (o *ORMTran) InsertBatch(s []interface{}) error {
+func (o *ORMTran) InsertBatch(s interface{}) error {
 	return insertBatch(o.tx, s)
 }
 
@@ -342,7 +342,7 @@ func Insert(s interface{}) error {
 	return Default.Insert(s)
 }
 
-func InsertBatch(s []interface{}) error {
+func InsertBatch(s interface{}) error {
 	return Default.InsertBatch(s)
 }
 

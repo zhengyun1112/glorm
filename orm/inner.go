@@ -789,9 +789,11 @@ func columnsByStruct(s interface{}) (string, string, []interface{}, reflect.Valu
 	return cols, vals, ret, pk, isAi
 }
 
-func columnsBySlice(s []interface{}) (string, string, []interface{}, []reflect.Value, []bool) {
-	t := reflect.TypeOf(s[0]).Elem()
-	ret := make([]interface{}, 0, t.NumField()*len(s))
+func columnsBySlice(s interface{}) (string, string, []interface{}, []reflect.Value, []bool) {
+	rt := reflect.TypeOf(s)
+	rv := reflect.ValueOf(s)
+	t := rt.Elem().Elem()
+	ret := make([]interface{}, 0, t.NumField()*rv.Len())
 	cols := "("
 	isFirst := true
 	for k := 0; k < t.NumField(); k++ {
@@ -816,14 +818,14 @@ func columnsBySlice(s []interface{}) (string, string, []interface{}, []reflect.V
 	cols += ")"
 
 	vals := bytes.Buffer{}
-	pks := make([]reflect.Value, len(s))
-	ais := make([]bool, len(s))
-	for n, record := range s {
-		ct := reflect.TypeOf(record).Elem()
+	pks := make([]reflect.Value, rv.Len())
+	ais := make([]bool, rv.Len())
+	for n := 0; n < rv.Len(); n++ {
+		ct := rv.Index(n).Type().Elem()
 		if ct.Name() != t.Name() {
 			continue
 		}
-		v := reflect.ValueOf(record).Elem()
+		v := rv.Index(n).Elem()
 		if n > 0 {
 			vals.WriteString(",")
 		}
@@ -880,13 +882,15 @@ func insert(tdx Tdx, s interface{}) error {
 	return nil
 }
 
-func insertBatch(tdx Tdx, s []interface{}) error {
-	if s == nil || len(s) == 0 {
+func insertBatch(tdx Tdx, s interface{}) error {
+	rv := reflect.ValueOf(s)
+
+	if s == nil || rv.Len() == 0 {
 		return nil
 	}
 	//TODO: check all elements in s are in same type
 	cols, vals, ifs, pks, ais := columnsBySlice(s)
-	t := reflect.TypeOf(s[0]).Elem()
+	t := reflect.TypeOf(s).Elem().Elem()
 
 	q := fmt.Sprintf("insert into `%s` %s values %s", fieldName2ColName(t.Name()), cols, vals)
 	ret, err := tdx.Exec(q, ifs...)
@@ -898,7 +902,7 @@ func insertBatch(tdx Tdx, s []interface{}) error {
 	if err != nil {
 		return err
 	}
-	for i, _ := range s {
+	for i := 0; i < rv.Len(); i++ {
 		if ais[i] {
 			pks[i].SetInt(lastInsertId + int64(i))
 		}
