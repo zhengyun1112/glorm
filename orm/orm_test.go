@@ -691,3 +691,52 @@ func TestSelectFloat64(t *testing.T) {
 		}
 	})
 }
+
+func TestSelectFloat64Interface(t *testing.T) {
+	oneTestScope(func(orm *ORM) {
+		list := make([]interface{}, 0, 2)
+		for i := 0; i < 2; i++ {
+			list = append(list, &TestOrmA123{
+				OtherId:     1,
+				Description: "test orm 1测试",
+				StartDate:   time.Now(),
+				EndDate:     time.Now(),
+			})
+		}
+		orm.InsertBatch(list)
+		//fmt.Println("insert 2 records cost time ", time.Now().Sub(start))
+		ret, _ := orm.SelectFloat64("select avg(test_id) from test_orm_a123")
+		fmt.Println(ret)
+		if ret != 1.5 {
+			t.Fatal("error!")
+		}
+	})
+}
+
+func TestSelectFloat64IllegalInput(t *testing.T) {
+	oneTestScope(func(orm *ORM) {
+		err := orm.InsertBatch(nil)
+		t.Log(err)
+		objs := make([]*TestOrmA123, 0)
+		err = orm.InsertBatch(objs)
+		t.Log(err)
+		err = orm.InsertBatch(&TestOrmA123{
+			OtherId:     1,
+			Description: "test orm 1测试",
+			StartDate:   time.Now(),
+			EndDate:     time.Now(),
+		})
+		t.Log(err)
+		err = orm.InsertBatch(map[string]string{
+			"other_id":"1",
+			"description":"test orm ceshi",
+		})
+		t.Log(err)
+		//fmt.Println("insert 2 records cost time ", time.Now().Sub(start))
+		ret, _ := orm.SelectFloat64("select avg(test_id) from test_orm_a123")
+		fmt.Println(ret)
+		if ret != 1.5 {
+			t.Fatal("error!")
+		}
+	})
+}

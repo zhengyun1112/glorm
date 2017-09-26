@@ -789,10 +789,7 @@ func columnsByStruct(s interface{}) (string, string, []interface{}, reflect.Valu
 	return cols, vals, ret, pk, isAi
 }
 
-func columnsBySlice(s interface{}) (string, string, []interface{}, []reflect.Value, []bool) {
-	rt := reflect.TypeOf(s)
-	rv := reflect.ValueOf(s)
-	t := rt.Elem().Elem()
+func columnsBySlice(rv reflect.Value, t reflect.Type, isInterface bool) (string, string, []interface{}, []reflect.Value, []bool) {
 	ret := make([]interface{}, 0, t.NumField()*rv.Len())
 	cols := "("
 	isFirst := true
@@ -821,11 +818,21 @@ func columnsBySlice(s interface{}) (string, string, []interface{}, []reflect.Val
 	pks := make([]reflect.Value, rv.Len())
 	ais := make([]bool, rv.Len())
 	for n := 0; n < rv.Len(); n++ {
-		ct := rv.Index(n).Type().Elem()
+		var ct reflect.Type
+		if isInterface {
+			ct = rv.Index(n).Elem().Type().Elem()
+		} else {
+			ct = rv.Index(n).Type().Elem()
+		}
 		if ct.Name() != t.Name() {
 			continue
 		}
-		v := rv.Index(n).Elem()
+		var v reflect.Value
+		if isInterface {
+			v = rv.Index(n).Elem().Elem()
+		} else {
+			v = rv.Index(n).Elem()
+		}
 		if n > 0 {
 			vals.WriteString(",")
 		}
@@ -882,15 +889,23 @@ func insert(tdx Tdx, s interface{}) error {
 	return nil
 }
 
+//s should have format like []*Xxx
 func insertBatch(tdx Tdx, s interface{}) error {
 	rv := reflect.ValueOf(s)
 
-	if s == nil || rv.Len() == 0 {
-		return nil
+	if s == nil || rv.Type().Kind() != reflect.Slice || rv.Len() == 0 {
+		return errors.New("param should be []*Xxx and its length > 0")
 	}
 	//TODO: check all elements in s are in same type
-	cols, vals, ifs, pks, ais := columnsBySlice(s)
-	t := reflect.TypeOf(s).Elem().Elem()
+	t := reflect.TypeOf(s).Elem()
+	isInterface := false
+	if t.Kind() == reflect.Interface {
+		isInterface = true
+		t = rv.Index(0).Elem().Elem().Type()
+	} else {
+		t = t.Elem()
+	}
+	cols, vals, ifs, pks, ais := columnsBySlice(rv, t, isInterface)
 
 	q := fmt.Sprintf("insert into `%s` %s values %s", fieldName2ColName(t.Name()), cols, vals)
 	ret, err := tdx.Exec(q, ifs...)
